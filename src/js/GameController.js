@@ -4,11 +4,11 @@ export default class GameController {
     this.stateService = stateService;
   }
 
-  init() {}
+  // init() {}
 
-  onCellClick(index) {}
+  // onCellClick(index) {}
 
-  onCellEnter(index) {}
+  // onCellEnter(index) {}
 
-  onCellLeave(index) {}
+  // onCellLeave(index) {}
 }

@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-unused-vars
 export function calcTileType(index, boardSize) {
   return 'center';
 }
