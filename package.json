@@ -9,9 +9,9 @@
     "build:prod": "set NODE_ENV=production&&webpack",
     "clean": "rd /s /q dist",
     "lint": "eslint .",
-		"test": "jest",
-		"coverage": "jest --coverage",
-		"preshow:coverage": "npm run coverage"
+    "test": "jest",
+    "coverage": "jest --coverage",
+    "preshow:coverage": "npm run coverage"
   },
   "keywords": [],
   "author": "DenisKulik",
@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "@babel/polyfill": "^7.12.1",
-    "core-js": "^3.26.1"
+    "core-js": "^3.26.1",
+    "fs.promises": "^0.1.2"
   }
 }
