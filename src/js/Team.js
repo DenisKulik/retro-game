@@ -1,1 +1,5 @@
-export default class Team {}
+export default class Team {
+  constructor(characters) {
+    this.characters = characters;
+  }
+}
