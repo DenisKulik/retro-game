@@ -1,10 +1,14 @@
+import themes from './themes';
+
 export default class GameController {
   constructor(gamePlay, stateService) {
     this.gamePlay = gamePlay;
     this.stateService = stateService;
   }
 
-  // init() {}
+  init() {
+    this.gamePlay.drawUi(themes.prairie);
+  }
 
   // onCellClick(index) {}
 
