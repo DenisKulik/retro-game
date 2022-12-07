@@ -1,6 +1,20 @@
-// eslint-disable-next-line no-unused-vars
 export function calcTileType(index, boardSize) {
-  return 'center';
+  let position;
+
+  if (index < boardSize) position = 'top';
+  if (index >= boardSize * (boardSize - 1)) position = 'bottom';
+
+  if (index === 0 || index === boardSize * (boardSize - 1)) {
+    position += '-left';
+  } else if (index === boardSize - 1 || index === boardSize ** 2 - 1) {
+    position += '-right';
+  }
+
+  if (!position && index % boardSize === 0) position = 'left';
+  if (!position && (index + 1) % boardSize === 0) position = 'right';
+  if (!position) position = 'center';
+
+  return position;
 }
 
 export function calcHealthLevel(health) {
