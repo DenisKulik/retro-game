@@ -11,36 +11,39 @@ import { generatePosition, generateTeam } from './generators';
 const playerClass = [Bowman, Swordsman, Magician];
 const opponentClass = [Vampire, Undead, Daemon];
 
-const playersTeam = generateTeam(playerClass, 1, 2);
-const opponentsTeam = generateTeam(opponentClass, 1, 2);
-
 export default class GameController {
   constructor(gamePlay, stateService) {
     this.gamePlay = gamePlay;
     this.stateService = stateService;
+    this.position = [];
   }
 
   init() {
+    const playersTeam = generateTeam(playerClass, 1, 2);
+    const opponentsTeam = generateTeam(opponentClass, 1, 2);
+
+    const firstPlayerPosition = generatePosition(playersTeam[0], 8);
+    let secondPlayerPosition = generatePosition(playersTeam[1], 8);
+
+    while (firstPlayerPosition === secondPlayerPosition) {
+      secondPlayerPosition = generatePosition(playersTeam[0], 8);
+    }
+
     const playersTeamPosition = [
-      new PositionedCharacter(
-        playersTeam[0],
-        generatePosition(playersTeam[0], 8)
-      ),
-      new PositionedCharacter(
-        playersTeam[1],
-        generatePosition(playersTeam[1], 8)
-      ),
+      new PositionedCharacter(playersTeam[0], firstPlayerPosition),
+      new PositionedCharacter(playersTeam[1], secondPlayerPosition),
     ];
 
+    const firstOpponentPosition = generatePosition(opponentsTeam[0], 8);
+    let secondOpponentPosition = generatePosition(opponentsTeam[1], 8);
+
+    while (firstOpponentPosition === secondOpponentPosition) {
+      secondOpponentPosition = generatePosition(opponentsTeam[0], 8);
+    }
+
     const opponentsTeamPosition = [
-      new PositionedCharacter(
-        opponentsTeam[0],
-        generatePosition(opponentsTeam[0], 8)
-      ),
-      new PositionedCharacter(
-        opponentsTeam[1],
-        generatePosition(opponentsTeam[1], 8)
-      ),
+      new PositionedCharacter(opponentsTeam[0], firstOpponentPosition),
+      new PositionedCharacter(opponentsTeam[1], secondOpponentPosition),
     ];
 
     this.gamePlay.drawUi(themes.prairie);
@@ -48,11 +51,30 @@ export default class GameController {
       ...playersTeamPosition,
       ...opponentsTeamPosition,
     ]);
+    this.position.push(...playersTeamPosition, ...opponentsTeamPosition);
   }
 
-  // onCellClick(index) {}
+  showInfo() {
+    this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this));
+    this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this));
+  }
 
-  // onCellEnter(index) {}
+  onCellEnter(cellIndex) {
+    const characterInCell = this.position.find(
+      (item) => item.position === cellIndex
+    );
 
-  // onCellLeave(index) {}
+    if (characterInCell) {
+      const { character } = characterInCell;
+      const message = `${'\u{1F396}'} ${character.level} ${'\u{2694}'} 
+      ${character.attack} ${'\u{1F6E1}'} ${character.defence} ${'\u{2764}'} 
+      ${character.health}`;
+
+      this.gamePlay.showCellTooltip(message, cellIndex);
+    }
+  }
+
+  onCellLeave(cellIndex) {
+    this.gamePlay.hideCellTooltip(cellIndex);
+  }
 }
