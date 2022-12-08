@@ -1,4 +1,5 @@
 import themes from './themes';
+import GamePlay from './GamePlay';
 import Bowman from './characters/Bowman';
 import Swordsman from './characters/Swordsman';
 import Magician from './characters/Magician';
@@ -16,6 +17,7 @@ export default class GameController {
     this.gamePlay = gamePlay;
     this.stateService = stateService;
     this.position = [];
+    this.selected = undefined;
   }
 
   init() {
@@ -52,11 +54,10 @@ export default class GameController {
       ...opponentsTeamPosition,
     ]);
     this.position.push(...playersTeamPosition, ...opponentsTeamPosition);
-  }
 
-  showInfo() {
     this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this));
     this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this));
+    this.gamePlay.addCellClickListener(this.onCellClick.bind(this));
   }
 
   onCellEnter(cellIndex) {
@@ -76,5 +77,25 @@ export default class GameController {
 
   onCellLeave(cellIndex) {
     this.gamePlay.hideCellTooltip(cellIndex);
+  }
+
+  onCellClick(cellIndex) {
+    const characterInCell = this.position.find(
+      (item) => item.position === cellIndex
+    );
+
+    if (characterInCell) {
+      const { character } = characterInCell;
+      if (['bowman', 'swordsman', 'magician'].includes(character.type)) {
+        if (this.selected) {
+          this.gamePlay.deselectCell(this.selected);
+        }
+
+        this.gamePlay.selectCell(cellIndex);
+        this.selected = cellIndex;
+      } else {
+        GamePlay.showError('Please choose your character');
+      }
+    }
   }
 }
