@@ -1,4 +1,5 @@
 import themes from './themes';
+import cursors from './cursors';
 import GamePlay from './GamePlay';
 import { createTeamOnBoard } from './Team';
 
@@ -32,12 +33,35 @@ export default class GameController {
       ${character.attack} ${'\u{1F6E1}'} ${character.defence} ${'\u{2764}'} 
       ${character.health}`;
 
+      if (
+        ['bowman', 'swordsman', 'magician'].includes(
+          characterInCell.character.type
+        )
+      ) {
+        this.gamePlay.setCursor(cursors.pointer);
+      } else if (this.selected) {
+        this.gamePlay.setCursor(cursors.crosshair);
+        this.gamePlay.selectCell(cellIndex, 'red');
+      } else {
+        this.gamePlay.setCursor(cursors.notallowed);
+      }
+
       this.gamePlay.showCellTooltip(message, cellIndex);
+    }
+
+    if (this.selected && !characterInCell) {
+      this.gamePlay.setCursor(cursors.pointer);
+      this.gamePlay.selectCell(cellIndex, 'green');
     }
   }
 
   onCellLeave(cellIndex) {
     this.gamePlay.hideCellTooltip(cellIndex);
+    this.gamePlay.setCursor(cursors.auto);
+
+    if (this.selected && this.selected !== cellIndex) {
+      this.gamePlay.deselectCell(cellIndex);
+    }
   }
 
   onCellClick(cellIndex) {
@@ -58,5 +82,77 @@ export default class GameController {
         GamePlay.showError('Please choose your character');
       }
     }
+  }
+
+  calcMoveCharacter(characterPosition, distance) {
+    const { boardSize } = this.gamePlay;
+    const colIndex = characterPosition % boardSize;
+    const rowIndex = Math.floor(characterPosition / boardSize);
+    const availabelCells = [];
+
+    for (let i = 1; i <= distance; i += 1) {
+      // move right
+      if (colIndex + i < boardSize) {
+        availabelCells.push(boardSize * rowIndex + (colIndex + i));
+      }
+      // move down
+      if (rowIndex + i < boardSize) {
+        availabelCells.push(boardSize * (rowIndex + i) + colIndex);
+      }
+      // move down right
+      if (rowIndex + i < boardSize && colIndex + i < boardSize) {
+        availabelCells.push(boardSize * (rowIndex + i) + (colIndex + i));
+      }
+      // move left
+      if (colIndex - i >= 0) {
+        availabelCells.push(boardSize * rowIndex + (colIndex - i));
+      }
+      // move down left
+      if (rowIndex + i < boardSize && colIndex - i >= 0) {
+        availabelCells.push(boardSize * (rowIndex + i) + (colIndex - i));
+      }
+      // move up
+      if (rowIndex - i >= 0) {
+        availabelCells.push(boardSize * (rowIndex - i) + colIndex);
+      }
+      // move up left
+      if (rowIndex - i >= 0 && colIndex - i >= 0) {
+        availabelCells.push(boardSize * (rowIndex - i) + (colIndex - i));
+      }
+      // move up right
+      if (rowIndex - i >= 0 && colIndex + i < boardSize) {
+        availabelCells.push(boardSize * (rowIndex - i) + (colIndex + i));
+      }
+    }
+
+    return availabelCells;
+  }
+
+  calcAttackCharacter(characterPosition, distance) {
+    const { boardSize } = this.gamePlay;
+    const colIndex = characterPosition % boardSize;
+    const rowIndex = Math.floor(characterPosition / boardSize);
+
+    let availableCellsUp = rowIndex - distance;
+    let availableCellsDown = rowIndex + distance;
+    let availableCellsLeft = colIndex - distance;
+    let availableCellsRight = colIndex + distance;
+
+    if (availableCellsUp < 0) availableCellsUp = 0;
+    if (availableCellsDown > boardSize - 1) availableCellsDown = boardSize - 1;
+    if (availableCellsLeft < 0) availableCellsLeft = 0;
+    if (availableCellsRight > boardSize - 1) availableCellsRight = boardSize - 1;
+
+    const allAvailableCells = [];
+    for (let i = availableCellsUp; i <= availableCellsDown; i += 1) {
+      for (let j = availableCellsLeft; j <= availableCellsRight; j += 1) {
+        allAvailableCells.push(boardSize * i + j);
+      }
+    }
+
+    const availableCells = allAvailableCells.filter(
+      (i) => i >= 0 && i !== characterPosition && i <= 63
+    );
+    return availableCells;
   }
 }

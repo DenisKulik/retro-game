@@ -11,6 +11,8 @@ test('should create a new character the 1st level', () => {
     health: 50,
     level: 1,
     type: 'bowman',
+    moveDistance: 2,
+    attackDistance: 2,
   });
 });
 
