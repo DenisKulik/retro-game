@@ -12,6 +12,15 @@
   "rules": {
     "linebreak-style": ["error", "unix"],
     "no-restricted-syntax": ["error", "LabeledStatement", "WithStatement"],
-    "comma-dangle": ["error", "only-multiline"]
+    "comma-dangle": ["error", "only-multiline"],
+    "operator-linebreak": [
+      "error",
+      "after",
+      {
+        "overrides": {
+          ":": "before"
+        }
+      }
+    ]
   }
 }
