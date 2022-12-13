@@ -8,6 +8,8 @@ export default class GameController {
     this.gamePlay = gamePlay;
     this.stateService = stateService;
     this.position = [];
+    this.availableMoveCells = undefined;
+    this.availableAttackCells = undefined;
     this.selected = undefined;
   }
 
@@ -23,19 +25,19 @@ export default class GameController {
   }
 
   onCellEnter(cellIndex) {
-    const characterInCell = this.position.find(
+    const currentCharacter = this.position.find(
       (item) => item.position === cellIndex
     );
 
-    if (characterInCell) {
-      const { character } = characterInCell;
+    if (currentCharacter) {
+      const { character } = currentCharacter;
       const message = `${'\u{1F396}'} ${character.level} ${'\u{2694}'} 
       ${character.attack} ${'\u{1F6E1}'} ${character.defence} ${'\u{2764}'} 
       ${character.health}`;
 
       if (
         ['bowman', 'swordsman', 'magician'].includes(
-          characterInCell.character.type
+          currentCharacter.character.type
         )
       ) {
         this.gamePlay.setCursor(cursors.pointer);
@@ -49,7 +51,11 @@ export default class GameController {
       this.gamePlay.showCellTooltip(message, cellIndex);
     }
 
-    if (this.selected && !characterInCell) {
+    if (
+      this.selected &&
+      !currentCharacter &&
+      this.availableMoveCells.includes(cellIndex)
+    ) {
       this.gamePlay.setCursor(cursors.pointer);
       this.gamePlay.selectCell(cellIndex, 'green');
     }
@@ -59,28 +65,42 @@ export default class GameController {
     this.gamePlay.hideCellTooltip(cellIndex);
     this.gamePlay.setCursor(cursors.auto);
 
-    if (this.selected && this.selected !== cellIndex) {
+    if (this.selected && this.selected.position !== cellIndex) {
       this.gamePlay.deselectCell(cellIndex);
     }
   }
 
   onCellClick(cellIndex) {
-    const characterInCell = this.position.find(
+    const currentCharacter = this.position.find(
       (item) => item.position === cellIndex
     );
 
-    if (characterInCell) {
-      const { character } = characterInCell;
+    if (currentCharacter) {
+      const { character } = currentCharacter;
       if (['bowman', 'swordsman', 'magician'].includes(character.type)) {
         if (this.selected) {
-          this.gamePlay.deselectCell(this.selected);
+          this.gamePlay.deselectCell(this.selected.position);
         }
 
         this.gamePlay.selectCell(cellIndex);
-        this.selected = cellIndex;
+        this.selected = currentCharacter;
+        this.availableMoveCells = this.calcMoveCharacter(
+          this.selected.position,
+          this.selected.character.moveDistance
+        );
+        this.availableAttackCells = this.calcAttackCharacter(
+          this.selected.position,
+          this.selected.character.attackDistance
+        );
       } else {
         GamePlay.showError('Please choose your character');
       }
+    } else if (this.selected && this.availableMoveCells.includes(cellIndex)) {
+      this.gamePlay.deselectCell(this.selected.position);
+      this.gamePlay.deselectCell(cellIndex);
+      this.selected.position = cellIndex;
+      this.gamePlay.redrawPositions(this.position);
+      this.selected = undefined;
     }
   }
 
