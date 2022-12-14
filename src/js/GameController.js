@@ -41,7 +41,10 @@ export default class GameController {
         )
       ) {
         this.gamePlay.setCursor(cursors.pointer);
-      } else if (this.selected) {
+      } else if (
+        this.selected &&
+        this.availableAttackCells.includes(cellIndex)
+      ) {
         this.gamePlay.setCursor(cursors.crosshair);
         this.gamePlay.selectCell(cellIndex, 'red');
       } else {
@@ -92,7 +95,20 @@ export default class GameController {
           this.selected.position,
           this.selected.character.attackDistance
         );
-      } else {
+      } else if (
+        this.selected &&
+        this.availableAttackCells.includes(cellIndex)
+      ) {
+        const target = currentCharacter;
+        const damage = this.calcDamage(
+          this.selected.character,
+          target.character
+        );
+        this.gamePlay.deselectCell(cellIndex);
+        this.gamePlay.showDamage(cellIndex, damage).then(() => {
+          this.gamePlay.redrawPositions(this.position);
+        });
+      } else if (!this.selected) {
         GamePlay.showError('Please choose your character');
       }
     } else if (this.selected && this.availableMoveCells.includes(cellIndex)) {
@@ -174,5 +190,21 @@ export default class GameController {
       (i) => i >= 0 && i !== characterPosition && i <= 63
     );
     return availableCells;
+  }
+
+  calcDamage(activeChar, target) {
+    const damage = Math.floor(
+      Math.max(activeChar.attack - target.defence, activeChar.attack * 0.1)
+    );
+    // eslint-disable-next-line no-param-reassign
+    target.health -= damage;
+
+    if (target.health <= 0) {
+      // eslint-disable-next-line no-param-reassign
+      target.health = 0;
+      this.selected = null;
+    }
+
+    return damage;
   }
 }
