@@ -8,9 +8,9 @@ export default class GameController {
     this.gamePlay = gamePlay;
     this.stateService = stateService;
     this.position = [];
-    this.availableMoveCells = undefined;
-    this.availableAttackCells = undefined;
-    this.selected = undefined;
+    this.availableMoveCells = null;
+    this.availableAttackCells = null;
+    this.selected = null;
   }
 
   init() {
@@ -104,10 +104,13 @@ export default class GameController {
           this.selected.character,
           target.character
         );
+        this.gamePlay.deselectCell(this.selected.position);
         this.gamePlay.deselectCell(cellIndex);
         this.gamePlay.showDamage(cellIndex, damage).then(() => {
           this.gamePlay.redrawPositions(this.position);
         });
+        this.selected = null;
+        this.timeout = setTimeout(this.actionOpponent.bind(this), 500);
       } else if (!this.selected) {
         GamePlay.showError('Please choose your character');
       }
@@ -116,7 +119,8 @@ export default class GameController {
       this.gamePlay.deselectCell(cellIndex);
       this.selected.position = cellIndex;
       this.gamePlay.redrawPositions(this.position);
-      this.selected = undefined;
+      this.selected = null;
+      this.timeout = setTimeout(this.actionOpponent.bind(this), 500);
     }
   }
 
@@ -206,5 +210,60 @@ export default class GameController {
     }
 
     return damage;
+  }
+
+  actionOpponent() {
+    this.selected = null;
+    // eslint-disable-next-line arrow-body-style
+    this.playerTeam = this.position.filter((item) => {
+      return ['bowman', 'swordsman', 'magician'].includes(item.character.type);
+    });
+    // eslint-disable-next-line arrow-body-style
+    this.opponentTeam = this.position.filter((item) => {
+      return ['vampire', 'undead', 'daemon'].includes(item.character.type);
+    });
+
+    const randomIndex = Math.floor(Math.random() * this.opponentTeam.length);
+    const randomOpponentChar = this.opponentTeam[randomIndex];
+
+    if (randomOpponentChar) {
+      const moveDistOpponent = randomOpponentChar.character.moveDistance;
+      const attackDistOpponent = randomOpponentChar.character.attackDistance;
+      const opponentPosition = randomOpponentChar.position;
+
+      this.availableMoveCells = this.calcMoveCharacter(
+        opponentPosition,
+        moveDistOpponent
+      );
+      this.availableAttackCells = this.calcAttackCharacter(
+        opponentPosition,
+        attackDistOpponent
+      );
+    }
+
+    let damageDone = false;
+
+    for (const player of this.playerTeam) {
+      if (this.availableAttackCells.includes(player.position)) {
+        const damage = this.calcDamage(
+          randomOpponentChar.character,
+          player.character
+        );
+        this.gamePlay.showDamage(player.position, damage).then(() => {
+          this.gamePlay.redrawPositions(this.position);
+        });
+
+        damageDone = true;
+        return;
+      }
+    }
+
+    if (!damageDone) {
+      randomOpponentChar.position =
+        this.availableMoveCells[
+          Math.floor(Math.random() * this.availableMoveCells.length)
+        ];
+      this.gamePlay.redrawPositions(this.position);
+    }
   }
 }
