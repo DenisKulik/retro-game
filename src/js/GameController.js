@@ -3,6 +3,13 @@ import cursors from './cursors';
 import GamePlay from './GamePlay';
 import { createTeamOnBoard } from './Team';
 
+const themesLevel = {
+  1: themes.prairie,
+  2: themes.desert,
+  3: themes.arctic,
+  4: themes.mountain,
+};
+
 export default class GameController {
   constructor(gamePlay, stateService) {
     this.gamePlay = gamePlay;
@@ -11,11 +18,12 @@ export default class GameController {
     this.availableMoveCells = null;
     this.availableAttackCells = null;
     this.selected = null;
+    this.level = 1;
   }
 
   init() {
-    this.team = createTeamOnBoard();
-    this.gamePlay.drawUi(themes.prairie);
+    this.team = createTeamOnBoard(this.level);
+    this.gamePlay.drawUi(themesLevel[this.level]);
     this.gamePlay.redrawPositions(this.team);
     this.position.push(...this.team);
 
@@ -101,12 +109,14 @@ export default class GameController {
       ) {
         const target = currentCharacter;
         const damage = this.calcDamage(
+          cellIndex,
           this.selected.character,
           target.character
         );
         this.gamePlay.deselectCell(this.selected.position);
         this.gamePlay.deselectCell(cellIndex);
         this.gamePlay.showDamage(cellIndex, damage).then(() => {
+          this.checkGameStatus();
           this.gamePlay.redrawPositions(this.position);
         });
         this.selected = null;
@@ -165,7 +175,12 @@ export default class GameController {
       }
     }
 
-    return availabelCells;
+    const occupiedPositions = [];
+    for (const char of this.position) {
+      occupiedPositions.push(char.position);
+    }
+
+    return availabelCells.filter((item) => !occupiedPositions.includes(item));
   }
 
   calcAttackCharacter(characterPosition, distance) {
@@ -196,7 +211,7 @@ export default class GameController {
     return availableCells;
   }
 
-  calcDamage(activeChar, target) {
+  calcDamage(cellIndex, activeChar, target) {
     const damage = Math.floor(
       Math.max(activeChar.attack - target.defence, activeChar.attack * 0.1)
     );
@@ -206,7 +221,9 @@ export default class GameController {
     if (target.health <= 0) {
       // eslint-disable-next-line no-param-reassign
       target.health = 0;
-      this.selected = null;
+      this.position = this.position.filter(
+        (char) => char.position !== cellIndex
+      );
     }
 
     return damage;
@@ -246,6 +263,7 @@ export default class GameController {
     for (const player of this.playerTeam) {
       if (this.availableAttackCells.includes(player.position)) {
         const damage = this.calcDamage(
+          player.position,
           randomOpponentChar.character,
           player.character
         );
@@ -254,16 +272,78 @@ export default class GameController {
         });
 
         damageDone = true;
-        return;
+        this.checkGameStatus();
+        break;
       }
     }
 
-    if (!damageDone) {
+    if (!damageDone && randomOpponentChar) {
       randomOpponentChar.position =
         this.availableMoveCells[
           Math.floor(Math.random() * this.availableMoveCells.length)
         ];
       this.gamePlay.redrawPositions(this.position);
     }
+  }
+
+  checkGameStatus() {
+    // eslint-disable-next-line arrow-body-style
+    this.playerTeam = this.position.filter((item) => {
+      return ['bowman', 'swordsman', 'magician'].includes(item.character.type);
+    });
+    // eslint-disable-next-line arrow-body-style
+    this.opponentTeam = this.position.filter((item) => {
+      return ['vampire', 'undead', 'daemon'].includes(item.character.type);
+    });
+
+    if (this.playerTeam.length === 0) {
+      GamePlay.showMessage('Game over');
+      this.gamePlay.cellClickListeners = [];
+      this.gamePlay.cellEnterListeners = [];
+      this.gamePlay.cellLeaveListeners = [];
+    }
+
+    if (this.level >= 4 && this.opponentTeam.length === 0) {
+      GamePlay.showMessage('Congrats! You`re win!');
+      this.gamePlay.cellClickListeners = [];
+      this.gamePlay.cellEnterListeners = [];
+      this.gamePlay.cellLeaveListeners = [];
+    }
+
+    if (this.opponentTeam.length === 0) {
+      this.level += 1;
+
+      for (const player of this.playerTeam) {
+        player.character.level += 1;
+        player.character.health += 80;
+
+        if (player.character.health > 100) {
+          player.character.health = 100;
+        }
+
+        player.character.attack = Math.max(
+          player.character.attack,
+          (player.character.attack * (80 + player.character.health)) / 100
+        );
+        player.character.defence = Math.max(
+          player.character.defence,
+          (player.character.defence * (80 + player.character.health)) / 100
+        );
+      }
+
+      if (this.level <= 4) {
+        this.upLevel();
+      }
+    }
+  }
+
+  upLevel() {
+    const playerCharacters = this.position;
+
+    this.newTeam = createTeamOnBoard(this.level);
+    this.gamePlay.drawUi(themesLevel[this.level]);
+    this.newTeam.splice(0, playerCharacters.length);
+    this.gamePlay.redrawPositions(this.newTeam);
+    this.position.push(...this.newTeam);
   }
 }

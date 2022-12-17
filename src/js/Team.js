@@ -13,12 +13,12 @@ export default class Team {
   }
 }
 
-export function createTeamOnBoard() {
+export function createTeamOnBoard(level) {
   const playerClass = [Bowman, Swordsman, Magician];
   const opponentClass = [Vampire, Undead, Daemon];
 
-  const playersTeam = generateTeam(playerClass, 1, 2);
-  const opponentsTeam = generateTeam(opponentClass, 1, 2);
+  const playersTeam = generateTeam(playerClass, level, 2);
+  const opponentsTeam = generateTeam(opponentClass, level, 2);
 
   const firstPlayerPosition = generatePosition(playersTeam[0], 8);
   let secondPlayerPosition = generatePosition(playersTeam[1], 8);
