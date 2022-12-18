@@ -19,6 +19,7 @@ export default class GameController {
     this.availableAttackCells = null;
     this.selected = null;
     this.level = 1;
+    this.score = 0;
   }
 
   init() {
@@ -30,6 +31,8 @@ export default class GameController {
     this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this));
     this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this));
     this.gamePlay.addCellClickListener(this.onCellClick.bind(this));
+
+    this.gamePlay.addNewGameListener(this.onNewGameClick.bind(this));
   }
 
   onCellEnter(cellIndex) {
@@ -113,11 +116,12 @@ export default class GameController {
           this.selected.character,
           target.character
         );
+        this.score += damage;
         this.gamePlay.deselectCell(this.selected.position);
         this.gamePlay.deselectCell(cellIndex);
         this.gamePlay.showDamage(cellIndex, damage).then(() => {
-          this.checkGameStatus();
           this.gamePlay.redrawPositions(this.position);
+          this.checkGameStatus();
         });
         this.selected = null;
         this.timeout = setTimeout(this.actionOpponent.bind(this), 500);
@@ -130,7 +134,7 @@ export default class GameController {
       this.selected.position = cellIndex;
       this.gamePlay.redrawPositions(this.position);
       this.selected = null;
-      this.timeout = setTimeout(this.actionOpponent.bind(this), 500);
+      this.timeout = setTimeout(this.actionOpponent.bind(this), 200);
     }
   }
 
@@ -269,10 +273,10 @@ export default class GameController {
         );
         this.gamePlay.showDamage(player.position, damage).then(() => {
           this.gamePlay.redrawPositions(this.position);
+          this.checkGameStatus();
         });
 
         damageDone = true;
-        this.checkGameStatus();
         break;
       }
     }
@@ -301,6 +305,7 @@ export default class GameController {
       this.gamePlay.cellClickListeners = [];
       this.gamePlay.cellEnterListeners = [];
       this.gamePlay.cellLeaveListeners = [];
+      this.gamePlay.setCursor(cursors.auto);
     }
 
     if (this.level >= 4 && this.opponentTeam.length === 0) {
@@ -308,6 +313,7 @@ export default class GameController {
       this.gamePlay.cellClickListeners = [];
       this.gamePlay.cellEnterListeners = [];
       this.gamePlay.cellLeaveListeners = [];
+      this.gamePlay.setCursor(cursors.auto);
     }
 
     if (this.opponentTeam.length === 0) {
@@ -345,5 +351,16 @@ export default class GameController {
     this.newTeam.splice(0, playerCharacters.length);
     this.gamePlay.redrawPositions(this.newTeam);
     this.position.push(...this.newTeam);
+  }
+
+  onNewGameClick() {
+    this.level = 1;
+    this.score = 0;
+    this.position = [];
+
+    this.team = createTeamOnBoard(this.level);
+    this.gamePlay.drawUi(themesLevel[this.level]);
+    this.gamePlay.redrawPositions(this.team);
+    this.position.push(...this.team);
   }
 }

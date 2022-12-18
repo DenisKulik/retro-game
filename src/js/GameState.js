@@ -1,5 +1,5 @@
 export default class GameState {
   static from(object) {
-    return object;
+    return typeof object === 'object' ? object : null;
   }
 }
