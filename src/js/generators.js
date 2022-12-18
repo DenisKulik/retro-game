@@ -40,10 +40,5 @@ export function generateTeam(allowedTypes, maxLevel, characterCount) {
     team.push(character.next().value);
   }
 
-  for (const char of team) {
-    char.attack *= char.level;
-    char.defence *= char.level;
-  }
-
   return team;
 }

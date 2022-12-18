@@ -327,20 +327,21 @@ export default class GameController {
 
       for (const player of this.playerTeam) {
         player.character.level += 1;
-        player.character.health += 80;
 
-        if (player.character.health > 100) {
-          player.character.health = 100;
-        }
+        player.character.attack = Math.floor(
+          Math.max(
+            player.character.attack,
+            (player.character.attack * (60 + player.character.health)) / 100
+          )
+        );
+        player.character.defence = Math.floor(
+          Math.max(
+            player.character.defence,
+            (player.character.defence * (60 + player.character.health)) / 100
+          )
+        );
 
-        player.character.attack = Math.max(
-          player.character.attack,
-          (player.character.attack * (80 + player.character.health)) / 100
-        );
-        player.character.defence = Math.max(
-          player.character.defence,
-          (player.character.defence * (80 + player.character.health)) / 100
-        );
+        player.character.health = 100;
       }
 
       if (this.level <= 4) {
@@ -368,6 +369,12 @@ export default class GameController {
     this.gamePlay.drawUi(themesLevel[this.level]);
     this.gamePlay.redrawPositions(this.team);
     this.position.push(...this.team);
+
+    if (this.gamePlay.cellClickListeners.length === 0) {
+      this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this));
+      this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this));
+      this.gamePlay.addCellClickListener(this.onCellClick.bind(this));
+    }
   }
 
   onSaveGameClick() {
