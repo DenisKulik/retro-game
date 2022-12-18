@@ -1,6 +1,7 @@
 import themes from './themes';
 import cursors from './cursors';
 import GamePlay from './GamePlay';
+import GameState from './GameState';
 import { createTeamOnBoard } from './Team';
 
 const themesLevel = {
@@ -23,16 +24,22 @@ export default class GameController {
   }
 
   init() {
-    this.team = createTeamOnBoard(this.level);
-    this.gamePlay.drawUi(themesLevel[this.level]);
-    this.gamePlay.redrawPositions(this.team);
-    this.position.push(...this.team);
+    if (this.stateService.load()) {
+      this.onLoadGame();
+    } else {
+      this.team = createTeamOnBoard(this.level);
+      this.gamePlay.drawUi(themesLevel[this.level]);
+      this.gamePlay.redrawPositions(this.team);
+      this.position.push(...this.team);
+    }
 
     this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this));
     this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this));
     this.gamePlay.addCellClickListener(this.onCellClick.bind(this));
 
     this.gamePlay.addNewGameListener(this.onNewGameClick.bind(this));
+    this.gamePlay.addSaveGameListener(this.onSaveGameClick.bind(this));
+    this.gamePlay.addLoadGameListener(this.onLoadGame.bind(this));
   }
 
   onCellEnter(cellIndex) {
@@ -88,7 +95,6 @@ export default class GameController {
     const currentCharacter = this.position.find(
       (item) => item.position === cellIndex
     );
-
     if (currentCharacter) {
       const { character } = currentCharacter;
       if (['bowman', 'swordsman', 'magician'].includes(character.type)) {
@@ -120,8 +126,8 @@ export default class GameController {
         this.gamePlay.deselectCell(this.selected.position);
         this.gamePlay.deselectCell(cellIndex);
         this.gamePlay.showDamage(cellIndex, damage).then(() => {
-          this.gamePlay.redrawPositions(this.position);
           this.checkGameStatus();
+          this.gamePlay.redrawPositions(this.position);
         });
         this.selected = null;
         this.timeout = setTimeout(this.actionOpponent.bind(this), 500);
@@ -272,8 +278,8 @@ export default class GameController {
           player.character
         );
         this.gamePlay.showDamage(player.position, damage).then(() => {
-          this.gamePlay.redrawPositions(this.position);
           this.checkGameStatus();
+          this.gamePlay.redrawPositions(this.position);
         });
 
         damageDone = true;
@@ -362,5 +368,28 @@ export default class GameController {
     this.gamePlay.drawUi(themesLevel[this.level]);
     this.gamePlay.redrawPositions(this.team);
     this.position.push(...this.team);
+  }
+
+  onSaveGameClick() {
+    const savedGame = {
+      level: this.level,
+      position: this.position,
+      score: this.score,
+    };
+
+    const gameState = GameState.from(savedGame);
+    this.stateService.save(gameState);
+    GamePlay.showMessage('The game is saved!');
+  }
+
+  onLoadGame() {
+    const loadedGame = this.stateService.load();
+    if (!loadedGame) GamePlay.showError('Error! Update the page!');
+
+    this.level = loadedGame.level;
+    this.position = loadedGame.position;
+    this.score = loadedGame.score;
+    this.gamePlay.drawUi(themesLevel[this.level]);
+    this.gamePlay.redrawPositions(this.position);
   }
 }
