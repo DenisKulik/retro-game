@@ -2,7 +2,14 @@ import themes from './themes';
 import cursors from './cursors';
 import GamePlay from './GamePlay';
 import GameState from './GameState';
-import { createTeamOnBoard } from './Team';
+import Bowman from './characters/Bowman';
+import Swordsman from './characters/Swordsman';
+import Magician from './characters/Magician';
+import Vampire from './characters/Vampire';
+import Undead from './characters/Undead';
+import Daemon from './characters/Daemon';
+import PositionedCharacter from './PositionedCharacter';
+import { generatePosition, generateTeam } from './generators';
 
 const themesLevel = {
   1: themes.prairie,
@@ -27,7 +34,7 @@ export default class GameController {
     if (this.stateService.load()) {
       this.onLoadGame();
     } else {
-      this.team = createTeamOnBoard(this.level);
+      this.team = this.createTeamOnBoard();
       this.gamePlay.drawUi(themesLevel[this.level]);
       this.gamePlay.redrawPositions(this.team);
       this.position.push(...this.team);
@@ -40,6 +47,40 @@ export default class GameController {
     this.gamePlay.addNewGameListener(this.onNewGameClick.bind(this));
     this.gamePlay.addSaveGameListener(this.onSaveGameClick.bind(this));
     this.gamePlay.addLoadGameListener(this.onLoadGame.bind(this));
+  }
+
+  createTeamOnBoard() {
+    this.playerClass = [Bowman, Swordsman, Magician];
+    this.opponentClass = [Vampire, Undead, Daemon];
+
+    this.playersTeam = generateTeam(this.playerClass, this.level, 2);
+    this.opponentsTeam = generateTeam(this.opponentClass, this.level, 2);
+
+    const firstPlayerPosition = generatePosition(this.playersTeam[0], 8);
+    let secondPlayerPosition = generatePosition(this.playersTeam[1], 8);
+
+    while (firstPlayerPosition === secondPlayerPosition) {
+      secondPlayerPosition = generatePosition(this.playersTeam[0], 8);
+    }
+
+    const playersTeamPosition = [
+      new PositionedCharacter(this.playersTeam[0], firstPlayerPosition),
+      new PositionedCharacter(this.playersTeam[1], secondPlayerPosition),
+    ];
+
+    const firstOpponentPosition = generatePosition(this.opponentsTeam[0], 8);
+    let secondOpponentPosition = generatePosition(this.opponentsTeam[1], 8);
+
+    while (firstOpponentPosition === secondOpponentPosition) {
+      secondOpponentPosition = generatePosition(this.opponentsTeam[0], 8);
+    }
+
+    const opponentsTeamPosition = [
+      new PositionedCharacter(this.opponentsTeam[0], firstOpponentPosition),
+      new PositionedCharacter(this.opponentsTeam[1], secondOpponentPosition),
+    ];
+
+    return [...playersTeamPosition, ...opponentsTeamPosition];
   }
 
   onCellEnter(cellIndex) {
@@ -353,7 +394,7 @@ export default class GameController {
   upLevel() {
     const playerCharacters = this.position;
 
-    this.newTeam = createTeamOnBoard(this.level);
+    this.newTeam = this.createTeamOnBoard();
     this.gamePlay.drawUi(themesLevel[this.level]);
     this.newTeam.splice(0, playerCharacters.length);
     this.gamePlay.redrawPositions(this.newTeam);
@@ -365,7 +406,7 @@ export default class GameController {
     this.score = 0;
     this.position = [];
 
-    this.team = createTeamOnBoard(this.level);
+    this.team = this.createTeamOnBoard();
     this.gamePlay.drawUi(themesLevel[this.level]);
     this.gamePlay.redrawPositions(this.team);
     this.position.push(...this.team);

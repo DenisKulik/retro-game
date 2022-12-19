@@ -6,8 +6,8 @@ import Swordsman from '../characters/Swordsman';
 test('should create a new character the 1st level', () => {
   const character = characterGenerator([Bowman], 1);
   expect(character.next().value).toEqual({
-    attack: 28,
-    defence: 28,
+    attack: 34,
+    defence: 23,
     health: 100,
     level: 1,
     type: 'bowman',
